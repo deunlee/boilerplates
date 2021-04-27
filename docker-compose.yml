@@ -1,0 +1,83 @@
+version: "3.7"
+# https://github.com/compose-spec/compose-spec/blob/master/spec.md
+
+services:
+    mariadb:
+        container_name: mariadb
+        build: docker/mariadb
+        restart: always
+        volumes:
+            - ./service/mariadb:/var/lib/mysql
+        environment:
+            TZ: Asia/Seoul
+            MYSQL_DATABASE: database
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: root_password
+        # comment:
+            # https://hub.docker.com/_/mariadb
+
+    php:
+        container_name: php
+        build: docker/php
+        restart: always
+        depends_on:
+            - mariadb
+        volumes:
+            - ./service/php/config.ini:/usr/local/etc/php/conf.d/config.ini:ro
+            - ./www/html:/var/www/html
+        environment:
+            TZ: Asia/Seoul
+        command: >
+            sh -c 'ln -snf /usr/share/zoneinfo/$$TZ /etc/localtime && 
+                   echo $$TZ > /etc/timezone &&
+                   printf "[PHP]\ndate.timezone = \"$$TZ\"\n" > /usr/local/etc/php/conf.d/timezone.ini &&
+                   exec php-fpm'
+        # comment:
+            # https://github.com/docker-library/docs/tree/master/php
+
+    nginx:
+        container_name: nginx
+        build: docker/nginx
+        restart: always
+        volumes:
+            - ./service/nginx/conf.d:/etc/nginx/conf.d:ro
+            - ./service/nginx/helper:/etc/nginx/helper:ro
+            - ./service/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            # - ./service/certbot:/etc/letsencrypt:ro
+            - ./www/html:/var/www/html
+            # - ./www/certbot:/var/www/certbot:ro
+            - ./log/nginx:/var/log/nginx
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            TZ: Asia/Seoul
+        # extra_hosts:
+            # - "host.docker.internal:host-gateway"
+        # command: "/bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+        # comment:
+            # https://hub.docker.com/_/nginx
+            # Reload: dce nginx nginx -s reload
+            # 호스트에서 돌아가는 서비스에 접근하려면 extra_hosts 주석 해제 (ex: VSCode)
+            # Certbot과 연동하려면 command 주석 해제 (24시간마다 다시 로드 => 인증서 업데이트)
+
+    # certbot:
+        # container_name: certbot
+        # image: certbot/certbot
+        # volumes:
+            # - ./service/certbot:/etc/letsencrypt
+            # - ./www/certbot:/var/www/certbot
+        # entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+        # comment:
+            # https://hub.docker.com/r/certbot/certbot
+            # 초기 인증서 설정은 init_certbot.sh 스크립트 이용 (도메인 및 이메일 수정할 것)
+
+    # nodejs:
+        # container_name: nodejs
+        # build: docker/nodejs
+        # restart: always
+        # environment:
+            # TZ: Asia/Seoul
+        # comment:
+            # https://hub.docker.com/_/node
