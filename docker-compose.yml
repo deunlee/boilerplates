@@ -81,12 +81,3 @@ services:
             # TZ: Asia/Seoul
         # comment:
             # https://hub.docker.com/_/node
-
-
-
-
-# phpMyAdmin
-# cd www
-# wget https://files.phpmyadmin.net/phpMyAdmin/5.1.0/phpMyAdmin-5.1.0-all-languages.zip
-# unzip phpMyAdmin*.zip -d ./html
-# mv ./html/phpMyAdmin* ./html/pma
