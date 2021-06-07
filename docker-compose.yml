@@ -7,19 +7,23 @@ services:
         build: docker/mariadb
         restart: always
         volumes:
-            - ./service/mariadb:/var/lib/mysql
+            - ./service/mariadb/database:/var/lib/mysql
+            - ./service/mariadb/init:/docker-entrypoint-initdb.d:ro
+            - ./service/mariadb/config.cnf:/etc/mysql/conf.d/config.cnf:ro
         # ports:
             # - "3306:3306"
         environment:
             TZ: Asia/Seoul
-            MYSQL_DATABASE: database
-            MYSQL_USER: user
-            MYSQL_PASSWORD: password
-            MYSQL_ROOT_PASSWORD: root_password
+        env_file: ./service/mariadb/docker.env
         # comment:
             # https://hub.docker.com/_/mariadb
+            # 기본 데이터베이스명 및 계정 설정은 docker.env 파일에 저장
+                # docker-sample.env 파일을 복사해서 수정할 것
+            # init 디렉터리에 있는 모든 .sql 파일은 컨테이너 최초 시작시 자동으로 import 됨
+                # 컨테이너 최초 시작 여부는 ./service/mariab/database 하위의 mysql 디렉터리 존재 여부로 판단함
+                # https://github.com/MariaDB/mariadb-docker/blob/master/10.6/docker-entrypoint.sh
             # 외부 접속을 허용하려면 ports 주석 해제
-            # 내부에서는 항상 접속할 수 있으므로, 가능하다면 포트를 노출시키지 않는 것이 좋음
+                # 내부에서는 항상 접속할 수 있으므로 가능하다면 포트를 노출시키지 않는 것이 좋음
 
     php:
         container_name: php
@@ -38,6 +42,7 @@ services:
                    printf "[PHP]\ndate.timezone = \"$$TZ\"\n" > /usr/local/etc/php/conf.d/timezone.ini &&
                    exec php-fpm'
         # comment:
+            # https://hub.docker.com/_/php
             # https://github.com/docker-library/docs/tree/master/php
 
     nginx:
@@ -45,9 +50,10 @@ services:
         build: docker/nginx
         restart: always
         volumes:
-            - ./service/nginx/conf.d:/etc/nginx/conf.d:ro
             - ./service/nginx/helper:/etc/nginx/helper:ro
+            - ./service/nginx/private:/etc/nginx/private:ro
             - ./service/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./service/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
             # - ./service/certbot:/etc/letsencrypt:ro
             - ./www/html:/var/www/html
             # - ./www/certbot:/var/www/certbot:ro
