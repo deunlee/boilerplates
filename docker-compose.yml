@@ -8,6 +8,8 @@ services:
         restart: always
         volumes:
             - ./service/mariadb:/var/lib/mysql
+        # ports:
+            # - "3306:3306"
         environment:
             TZ: Asia/Seoul
             MYSQL_DATABASE: database
@@ -16,6 +18,8 @@ services:
             MYSQL_ROOT_PASSWORD: root_password
         # comment:
             # https://hub.docker.com/_/mariadb
+            # 외부 접속을 허용하려면 ports 주석 해제
+            # 내부에서는 항상 접속할 수 있으므로, 가능하다면 포트를 노출시키지 않는 것이 좋음
 
     php:
         container_name: php
@@ -55,12 +59,12 @@ services:
             TZ: Asia/Seoul
         # extra_hosts:
             # - "host.docker.internal:host-gateway"
-        # command: "/bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+        # command: "/bin/sh -c 'while :; do sleep 48h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
         # comment:
             # https://hub.docker.com/_/nginx
             # Reload: dce nginx nginx -s reload
             # 호스트에서 돌아가는 서비스에 접근하려면 extra_hosts 주석 해제 (ex: VSCode)
-            # Certbot과 연동하려면 command 주석 해제 (24시간마다 다시 로드 => 인증서 업데이트)
+            # Certbot과 연동하려면 command 주석 해제 (48시간마다 다시 로드 => 인증서 업데이트)
 
     # certbot:
         # container_name: certbot
@@ -68,10 +72,10 @@ services:
         # volumes:
             # - ./service/certbot:/etc/letsencrypt
             # - ./www/certbot:/var/www/certbot
-        # entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 24h & wait $${!}; done;'"
+        # entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 48h & wait $${!}; done;'"
         # comment:
             # https://hub.docker.com/r/certbot/certbot
-            # 초기 인증서 설정은 init_certbot.sh 스크립트 이용 (도메인 및 이메일 수정할 것)
+            # 초기 인증서 설정은 ./script/init_certbot.sh 스크립트 이용 (도메인 및 이메일 수정할 것)
 
     # nodejs:
         # container_name: nodejs
