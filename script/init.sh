@@ -54,7 +54,7 @@ create_default_cert()
             -subj   "/C=US/ST=Test/L=Test/O=Test/CN=test.com" \
             -keyout "$CERT_KEY" \
             -out    "$CERT_FILE"
-        echo "### Created a default certificate for nginx."
+        echo ">>> Created a default certificate for nginx."
         # openssl x509 -text -noout -in "$CERT_FILE"
         chmod 600 "$CERT_KEY"
         chmod 600 "$CERT_FILE"
@@ -71,7 +71,7 @@ install_php_my_admin()
     PMA_PATH="./www/html/pma"
     # Confirm reinstallation if already installed.
     if [ -d "$PMA_PATH" ]; then
-        if [ $(confirm "### It's already installed. Do you want to reinstall?" "n") = "n" ]; then
+        if [ $(confirm ">>> It's already installed. Do you want to reinstall?" "n") = "n" ]; then
             return 0
         fi
     fi
@@ -103,6 +103,6 @@ install_wordpress()
 
 create_default_cert
 
-if [ $(confirm "### Do you want to install phpMyAdmin?" "y") = "y" ]; then
+if [ $(confirm ">>> Do you want to install phpMyAdmin?" "y") = "y" ]; then
     install_php_my_admin
 fi
