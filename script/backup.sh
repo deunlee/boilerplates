@@ -35,7 +35,7 @@ tar --exclude='./backup' \
     -cf "$TGZ_PATH" .
     # -zcf "$TGZ_PATH" .
 
-echo ">>> Backup completed successfully at $(date)."
+echo ">>> Backup completed at $(date)."
 echo
 
 ls "$BACKUP_DIR" -lh | grep "$DATE_TIME"
