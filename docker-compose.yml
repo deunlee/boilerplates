@@ -37,11 +37,6 @@ services:
             - ./www/html:/var/www/html
         env_file:
             - ./docker/common.env
-        command: >
-            sh -c 'ln -snf /usr/share/zoneinfo/$$TZ /etc/localtime && 
-                   echo $$TZ > /etc/timezone &&
-                   printf "[PHP]\ndate.timezone = \"$$TZ\"\n" > /usr/local/etc/php/conf.d/timezone.ini &&
-                   exec php-fpm'
         # help:
             # https://github.com/docker-library/docs/tree/master/php
 

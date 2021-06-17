@@ -74,6 +74,7 @@ RUN { \
 
 # Add the TimeZone package
 RUN apk add --no-cache tzdata
+COPY docker-php-entrypoint /usr/local/bin/
 
 # Add the main user with specific UID
 ARG USER=www-data
