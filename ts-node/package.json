@@ -1,15 +1,8 @@
 {
     "name": "project",
-    "private": true,
     "version": "1.0.0",
     "description": "project description",
-    "main": "dist/main.js",
-    "scripts": {
-        "start": "ts-node src/main.ts",
-        "build": "tsc",
-        "dev": "nodemon --no-stdin",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
+    "keywords": [],
     "author": "<user>",
     "license": "MIT",
     "repository": {
@@ -20,14 +13,22 @@
         "url": "https://github.com/<user>/<repo>/issues"
     },
     "homepage": "https://github.com/<user>/<repo>#readme",
+    "main": "dist/main.js",
+    "scripts": {
+        "start": "ts-node src/main.ts",
+        "dev": "nodemon",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint --fix src/**/*.ts",
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
     "devDependencies": {
         "@types/node": "^16.9.4",
+        "@typescript-eslint/eslint-plugin": "^4.31.2",
+        "@typescript-eslint/parser": "^4.31.2",
+        "eslint": "^7.32.0",
         "nodemon": "^2.0.12",
         "ts-node": "^10.2.1",
         "typescript": "^4.4.3"
-    },
-    "engines": {
-        "node": ">=14.0.0",
-        "npm": ">=6.0.0"
     }
 }
