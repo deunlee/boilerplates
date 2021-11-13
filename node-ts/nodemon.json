@@ -3,6 +3,7 @@
         "**/*.test.ts",
         "**/*.spec.ts",
         "node_modules",
+        "bin",
         "dist",
         "log"
     ],

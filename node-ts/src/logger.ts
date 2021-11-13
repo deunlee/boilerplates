@@ -12,16 +12,16 @@ const logger = createLogger({
     level: 'debug',
     // format: format.json(),
     format: format.combine(
-        format.timestamp({ format: 'HH:MM:SS' }),
+        format.timestamp({ format: 'HH:mm:ss' }),
         format.printf(msg => colorizer.colorize(msg.level, `[${msg.timestamp}] <${msg.level.toUpperCase()}> ${msg.message}`)),
     ),
     defaultMeta: {
         service: 'user-service'
     },
     transports: [
-        new transports.File({ filename: './log/error.log', level: 'error' }),
-        new transports.File({ filename: './log/combined.log' }),
-        // new transports.Console(),
+        // new transports.File({ filename: './log/error.log', level: 'error' }),
+        // new transports.File({ filename: './log/combined.log' }),
+        new transports.Console(),
     ],
 });
 
