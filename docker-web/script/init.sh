@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Colors
+# Black        0;30     Dark Gray     1;30
+# Red          0;31     Light Red     1;31
+# Green        0;32     Light Green   1;32
+# Brown/Orange 0;33     Yellow        1;33
+# Blue         0;34     Light Blue    1;34
+# Purple       0;35     Light Purple  1;35
+# Cyan         0;36     Light Cyan    1;36
+# Light Gray   0;37     White         1;37
+NC='\033[0m' # No Color
+RED='\033[0;31m'
+DGRAY='\033[1;30m'
+
+
 if [ ! -e "$(pwd)/docker-compose.yml" ]; then
     echo
     echo ">>> The 'docker-compose.yml' file does not exist in current working directory."
@@ -8,8 +22,8 @@ if [ ! -e "$(pwd)/docker-compose.yml" ]; then
     exit
 fi
 
-confirm()
-{
+
+confirm() {
     # $1 for prompt string, $2 for default answer
     prompt="${1:-Are you sure?} "
     case $2 in
@@ -31,24 +45,38 @@ confirm()
     done
 }
 
-
-ASSET_PATH="./asset"
-mkdir -p "$ASSET_PATH"
-
-BACKUP_PATH="./backup"
-
-LOG_PATH="./log"
-mkdir -p "$LOG_PATH/nginx"
-mkdir -p "$LOG_PATH/php"
-
-SERVICE_PATH="./service"
-mkdir -p "$SERVICE_PATH/mariadb/database"
-mkdir -p "$SERVICE_PATH/mariadb/init"
+get_random_string() {
+    echo "$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32 ; echo '')"
+}
 
 
-generate_default_nginx_cert()
-{
-    CERT_PATH="./service/nginx/private"
+PATH_ASSET="./asset"
+PATH_BACKUP="./backup"
+PATH_LOG="./log"
+PATH_SVC="./service"
+PATH_HTML="./www/html"
+
+mkdir -p "$PATH_ASSET"
+mkdir -p "$PATH_LOG/nginx"
+mkdir -p "$PATH_LOG/php"
+mkdir -p "$PATH_SVC/mariadb/database"
+mkdir -p "$PATH_SVC/mariadb/init"
+mkdir -p "$PATH_HTML"
+
+
+init_mariadb() {
+    DB_CONFIG="$PATH_SVC/mariadb/config.env"
+    if [ ! -e "$DB_CONFIG" ]; then
+        echo ">>> rand pw"
+        cp "$PATH_SVC/mariadb/config-sample.env" "$DB_CONFIG"
+        sed -i -e "s/MYSQL_ROOT_PASSWORD=.*/MYSQL_ROOT_PASSWORD=$(get_random_string)/" "$DB_CONFIG"
+        sed -i -e "s/MYSQL_PASSWORD=.*/MYSQL_PASSWORD=$(get_random_string)/" "$DB_CONFIG"
+    fi
+}
+
+
+generate_default_nginx_cert() {
+    CERT_PATH="$PATH_SVC/nginx/private"
     CERT_FILE="$CERT_PATH/default.crt"
     CERT_KEY="$CERT_PATH/default.key"
     mkdir -p "$CERT_PATH"
@@ -67,58 +95,118 @@ generate_default_nginx_cert()
 }
 
 
-
-install_php_my_admin()
-{
+install_php_my_admin() {
     PMA_URL="https://files.phpmyadmin.net/phpMyAdmin/5.1.1/phpMyAdmin-5.1.1-all-languages.zip"
-    PMA_FILE="$ASSET_PATH/${PMA_URL##*/}"
+    PMA_FILE="$PATH_ASSET/${PMA_URL##*/}"
     PMA_DIR="${PMA_FILE%.zip}"
-    PMA_PATH="./www/html/pma"
+    PMA_PATH="$PATH_HTML/pma"
+
     # Confirm reinstallation if already installed.
     if [ -d "$PMA_PATH" ]; then
-        if [ $(confirm ">>> It's already installed. Do you want to reinstall?" "n") = "n" ]; then
+        echo ">>> phpMyAdmin is already installed."
+        if [ $(confirm ">>> Do you want to reinstall?" "n") = "n" ]; then
             return 0
         fi
     fi
-    # Download phpMyAdmin.
+
+    # Download file.
     if [ ! -e "$PMA_FILE" ]; then
+        echo -e "${DGRAY}\c"
         wget "$PMA_URL" -O "$PMA_FILE"
+        echo -e "${NC}\c"
     fi
+
     # Unzip and move it.
     rm -rf "$PMA_DIR"
     rm -rf "$PMA_PATH"
-    unzip -q "$PMA_FILE" -d "$ASSET_PATH"
+    unzip -q "$PMA_FILE" -d "$PATH_ASSET"
     mv "$PMA_DIR" "$PMA_PATH"
+
     # Update the config file.
     RANDOM_SECRET=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32 ; echo '')
     cp "$PMA_PATH/config.sample.inc.php" "$PMA_PATH/config.inc.php"
     sed -i -e "s/cfg\['blowfish_secret'\] = ''/cfg['blowfish_secret'] = '$RANDOM_SECRET'/" "$PMA_PATH/config.inc.php"
     sed -i -e "s/\['host'\] = 'localhost'/\['host'\] = 'mariadb'/" "$PMA_PATH/config.inc.php"
+
     # Create temporary directory.
     mkdir "$PMA_PATH/tmp"
     chmod 777 "$PMA_PATH/tmp"
-}
-
-install_wordpress()
-{
-    # TODO
-    return 0
+    echo ">>> phpMyAdmin has been successfully installed."
 }
 
 
+install_wordpress() {
+    # https://wordpress.org/download/releases/
+    WP_URL="https://wordpress.org/wordpress-5.8.2.tar.gz"
+    WP_FILE="$PATH_ASSET/${WP_URL##*/}"
+    WP_PATH="$PATH_HTML/wp"
+    WP_PATH_OLD="$PATH_HTML/wp-old"
 
-main()
-{
+    # Confirm reinstallation if already installed.
+    if [ -d "$WP_PATH" ]; then
+        echo ">>> WordPress is already installed."
+        if [ $(confirm ">>> Do you want to reinstall?" "n") = "n" ]; then
+            return 0
+        fi
+        rm -rf "$WP_PATH_OLD"
+        mv "$WP_PATH" "$WP_PATH_OLD"
+    fi
+
+    # Download file.
+    if [ ! -e "$WP_FILE" ]; then
+        echo -e "${DGRAY}\c"
+        wget "$WP_URL" -O "$WP_FILE"
+        echo -e "${NC}\c"
+    fi
+
+    # Unzip and move it.
+    rm -rf "$PATH_ASSET/wordpress"
+    tar zxf "$WP_FILE" -C "$PATH_ASSET"
+    mv "$PATH_ASSET/wordpress" "$WP_PATH"
+
+    # Update the config file.
+    DB_CONFIG="$PATH_SVC/mariadb/config.env"
+    WP_CONFIG="$WP_PATH/wp-config.php"
+    cp "$WP_PATH/wp-config-sample.php" "$WP_CONFIG"
+    sed -i "s/database_name_here/$(. $DB_CONFIG; echo $MYSQL_DATABASE)/" "$WP_CONFIG"
+    sed -i "s/username_here/$(. $DB_CONFIG; echo $MYSQL_USER)/" "$WP_CONFIG"
+    sed -i "s/password_here/$(. $DB_CONFIG; echo $MYSQL_PASSWORD)/" "$WP_CONFIG"
+    get_wp_random() {
+        echo "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9!@#\%+=' | fold -w 64 | sed 1q)"
+    }
+    sed -i "s/define( 'AUTH_KEY',         'put your unique phrase here' );/define( 'AUTH_KEY',         '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );/define( 'SECURE_AUTH_KEY',  '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'LOGGED_IN_KEY',    'put your unique phrase here' );/define( 'LOGGED_IN_KEY',    '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'NONCE_KEY',        'put your unique phrase here' );/define( 'NONCE_KEY',        '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'AUTH_SALT',        'put your unique phrase here' );/define( 'AUTH_SALT',        '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );/define( 'SECURE_AUTH_SALT', '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'LOGGED_IN_SALT',   'put your unique phrase here' );/define( 'LOGGED_IN_SALT',   '$(get_wp_random)' );/g" "$WP_CONFIG"
+    sed -i "s/define( 'NONCE_SALT',       'put your unique phrase here' );/define( 'NONCE_SALT',       '$(get_wp_random)' );/g" "$WP_CONFIG"
+
+    echo ">>> WordPress has been successfully installed."
+}
+
+
+main() {
     echo "==================================="
-    echo ">>> Docker Init Script (v.1.0)"
+    echo ">>> Docker-Web Init Script (v.1.2)"
     echo "==================================="
     echo
 
+    init_mariadb
     generate_default_nginx_cert
+
+    if [ $(confirm ">>> Do you want to install WordPress?" "y") = "y" ]; then
+        install_wordpress
+        echo
+    fi
 
     if [ $(confirm ">>> Do you want to install phpMyAdmin?" "n") = "y" ]; then
         install_php_my_admin
+        echo
     fi
+
+    echo ">>> Finished!"
 }
 
 

@@ -1,7 +1,7 @@
 asset/
 log/
 
-service/mariadb/docker.env
+service/mariadb/config.env
 service/mariadb/init
 
 service/nginx/private

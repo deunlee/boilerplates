@@ -16,7 +16,7 @@ services:
             # - "3306:3306"
         env_file:
             - ./docker/common.env
-            - ./service/mariadb/docker.env
+            - ./service/mariadb/config.env
         # help:
             # 기본 데이터베이스명 및 계정 설정은 docker.env 파일에 저장
                 # docker-sample.env 파일을 복사해서 수정할 것
