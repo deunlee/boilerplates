@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "C/C++: Build Active File (g++.exe)",
+			"type": "cppbuild", // Ctrl+Shift+B
+			"command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+			"args": [
+				"-g",
+				"${file}",
+				"-o",
+				"${fileDirname}\\build\\${fileBasenameNoExtension}.exe",
+				"-lwsock32" // #pragma comment(lib, "ws2_32")
+			],
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Compiler: C:\\msys64\\mingw64\\bin\\g++.exe"
+		},
+		{
+			"label": "C/C++: Create Build Directory",
+			"type": "shell",
+			"linux": {
+				"command": "mkdir -p ./build"
+			},
+			"windows": {
+				"command": "cmd",
+				"args": ["/C", "if not exist .\\build mkdir .\\build"]
+			}
+		}
+	]
+}
