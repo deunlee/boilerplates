@@ -7,6 +7,6 @@ service/mariadb/init
 service/nginx/private
 service/nginx/helper/block
 
-www/html
+www/html/**
 !www/html/index.php
 !www/html/robots.txt
