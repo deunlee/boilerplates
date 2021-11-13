@@ -10,7 +10,9 @@ RUN apk add --no-cache \
 # Ghostscript is required for rendering PDF previews
 		ghostscript \
 # Alpine package for "imagemagick" contains ~120 .so files, see: https://github.com/docker-library/wordpress/pull/497
-		imagemagick
+		imagemagick \
+# TimeZone support
+		tzdata
 
 # install the PHP extensions we need (https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions)
 RUN set -ex; \
@@ -72,12 +74,13 @@ RUN { \
 
 
 
-# Add the TimeZone package
+# Add the entry point script
 RUN apk add --no-cache tzdata
 COPY docker-php-entrypoint /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-php-entrypoint
 
-# Add the main user with specific UID
-# DO NOT CHANGE USER NAME
+
+# Add the main user with specific UID (Do NOT change user name)
 ARG USER=www-data
 ARG UID=1000
 RUN sed -i -e "s/^\($USER:[^:]\):[0-9]*:[0-9]*:/\1:$UID:$UID:/" /etc/passwd && \

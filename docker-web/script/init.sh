@@ -67,7 +67,7 @@ mkdir -p "$PATH_HTML"
 init_mariadb() {
     DB_CONFIG="$PATH_SVC/mariadb/config.env"
     if [ ! -e "$DB_CONFIG" ]; then
-        echo ">>> rand pw"
+        echo ">>> Creating MariaDB config file..."
         cp "$PATH_SVC/mariadb/config-sample.env" "$DB_CONFIG"
         sed -i -e "s/MYSQL_ROOT_PASSWORD=.*/MYSQL_ROOT_PASSWORD=$(get_random_string)/" "$DB_CONFIG"
         sed -i -e "s/MYSQL_PASSWORD=.*/MYSQL_PASSWORD=$(get_random_string)/" "$DB_CONFIG"
@@ -75,20 +75,21 @@ init_mariadb() {
 }
 
 
-generate_default_nginx_cert() {
+init_nginx() {
+    # Generate default certificate.
     CERT_PATH="$PATH_SVC/nginx/private"
-    CERT_FILE="$CERT_PATH/default.crt"
+    CERT_FILE="$CERT_PATH/default.pem"
     CERT_KEY="$CERT_PATH/default.key"
     mkdir -p "$CERT_PATH"
     if [ ! -e "$CERT_FILE" ] || [ ! -e "$CERT_KEY" ]; then
-        echo ">>> Generating a default certificate for nginx..."
-        echo
+        echo ">>> Generating a default certificate for NGINX..."
+        echo -e "${DGRAY}\c"
         openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
             -subj   "/C=US/ST=Test/L=Test/O=Test/CN=test.com" \
             -keyout "$CERT_KEY" \
             -out    "$CERT_FILE"
-        echo
         # openssl x509 -text -noout -in "$CERT_FILE"
+        echo -e "${NC}"
         chmod 600 "$CERT_KEY"
         chmod 600 "$CERT_FILE"
     fi
@@ -123,9 +124,8 @@ install_php_my_admin() {
     mv "$PMA_DIR" "$PMA_PATH"
 
     # Update the config file.
-    RANDOM_SECRET=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32 ; echo '')
     cp "$PMA_PATH/config.sample.inc.php" "$PMA_PATH/config.inc.php"
-    sed -i -e "s/cfg\['blowfish_secret'\] = ''/cfg['blowfish_secret'] = '$RANDOM_SECRET'/" "$PMA_PATH/config.inc.php"
+    sed -i -e "s/cfg\['blowfish_secret'\] = ''/cfg['blowfish_secret'] = '$(get_random_string)'/" "$PMA_PATH/config.inc.php"
     sed -i -e "s/\['host'\] = 'localhost'/\['host'\] = 'mariadb'/" "$PMA_PATH/config.inc.php"
 
     # Create temporary directory.
@@ -171,6 +171,7 @@ install_wordpress() {
     sed -i "s/database_name_here/$(. $DB_CONFIG; echo $MYSQL_DATABASE)/" "$WP_CONFIG"
     sed -i "s/username_here/$(. $DB_CONFIG; echo $MYSQL_USER)/" "$WP_CONFIG"
     sed -i "s/password_here/$(. $DB_CONFIG; echo $MYSQL_PASSWORD)/" "$WP_CONFIG"
+    sed -i "s/localhost/mariadb/" "$WP_CONFIG"
     get_wp_random() {
         echo "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9!@#\%+=' | fold -w 64 | sed 1q)"
     }
@@ -183,18 +184,28 @@ install_wordpress() {
     sed -i "s/define( 'LOGGED_IN_SALT',   'put your unique phrase here' );/define( 'LOGGED_IN_SALT',   '$(get_wp_random)' );/g" "$WP_CONFIG"
     sed -i "s/define( 'NONCE_SALT',       'put your unique phrase here' );/define( 'NONCE_SALT',       '$(get_wp_random)' );/g" "$WP_CONFIG"
 
+    if [ $(confirm ">>> Do you want to add NGINX config file for WordPress?" "y") = "y" ]; then
+        read -p ">>> Enter your domain name (test.lan): " NG_DOMAIN
+        NG_DOMAIN=${NG_DOMAIN:-test.lan}
+        NG_DEFAULT="$PATH_SVC/nginx/sites-available/your.domain.com.conf"
+        NG_CONFIG="$PATH_SVC/nginx/sites-enabled/$NG_DOMAIN.conf"
+        cp "$NG_DEFAULT" "$NG_CONFIG"
+        sed -i "s/private\/your.domain.com/private\/default/" "$NG_CONFIG"
+        sed -i "s/your.domain.com/$NG_DOMAIN/" "$NG_CONFIG"
+    fi
+
     echo ">>> WordPress has been successfully installed."
 }
 
 
 main() {
-    echo "==================================="
-    echo ">>> Docker-Web Init Script (v.1.2)"
-    echo "==================================="
+    echo "========================================"
+    echo ">>> Docker-Web Init Script (v.1.2.1)"
+    echo "========================================"
     echo
 
     init_mariadb
-    generate_default_nginx_cert
+    init_nginx
 
     if [ $(confirm ">>> Do you want to install WordPress?" "y") = "y" ]; then
         install_wordpress
