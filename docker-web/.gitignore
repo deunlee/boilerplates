@@ -1,4 +1,5 @@
 asset/
+backup/
 log/
 
 service/mariadb/database

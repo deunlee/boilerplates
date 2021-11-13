@@ -18,7 +18,7 @@ mkdir -p "$BACKUP_DIR"
 
 is_service_enabled()
 {
-    docker-compose config --services | grep -x "$1" > /dev/null 2>&1
+    docker compose config --services | grep -x "$1" > /dev/null 2>&1
 }
 
 dump_mariadb()
@@ -29,7 +29,7 @@ dump_mariadb()
     rm -f "$DB_DIR"/backup*.sql
 
     echo ">>> Dumping the mariadb database..."
-    docker-compose exec mariadb \
+    docker compose exec mariadb \
         sh -c 'exec mysqldump --databases "$MYSQL_DATABASE" -uroot -p"$MYSQL_ROOT_PASSWORD" --skip-extended-insert' \
         > "$DB_FILE"
 
