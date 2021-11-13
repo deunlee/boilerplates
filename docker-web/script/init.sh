@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# current_dir=$(pwd)
-# script_dir=$(dirname "$0")
-# echo $current_dir
-# echo $script_dir
+if [ ! -e "$(pwd)/docker-compose.yml" ]; then
+    echo
+    echo ">>> The 'docker-compose.yml' file does not exist in current working directory."
+    echo ">>> Change working directory to the path it is in and run this script again."
+    echo
+    exit
+fi
 
 confirm()
 {
@@ -43,18 +46,20 @@ mkdir -p "$SERVICE_PATH/mariadb/database"
 mkdir -p "$SERVICE_PATH/mariadb/init"
 
 
-create_default_cert()
+generate_default_nginx_cert()
 {
     CERT_PATH="./service/nginx/private"
     CERT_FILE="$CERT_PATH/default.crt"
     CERT_KEY="$CERT_PATH/default.key"
     mkdir -p "$CERT_PATH"
     if [ ! -e "$CERT_FILE" ] || [ ! -e "$CERT_KEY" ]; then
+        echo ">>> Generating a default certificate for nginx..."
+        echo
         openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
             -subj   "/C=US/ST=Test/L=Test/O=Test/CN=test.com" \
             -keyout "$CERT_KEY" \
             -out    "$CERT_FILE"
-        echo ">>> Created a default certificate for nginx."
+        echo
         # openssl x509 -text -noout -in "$CERT_FILE"
         chmod 600 "$CERT_KEY"
         chmod 600 "$CERT_FILE"
@@ -101,8 +106,20 @@ install_wordpress()
 }
 
 
-create_default_cert
 
-if [ $(confirm ">>> Do you want to install phpMyAdmin?" "y") = "y" ]; then
-    install_php_my_admin
-fi
+main()
+{
+    echo "==================================="
+    echo ">>> Docker Init Script (v.1.0)"
+    echo "==================================="
+    echo
+
+    generate_default_nginx_cert
+
+    if [ $(confirm ">>> Do you want to install phpMyAdmin?" "n") = "y" ]; then
+        install_php_my_admin
+    fi
+}
+
+
+main

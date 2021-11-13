@@ -77,7 +77,8 @@ RUN apk add --no-cache tzdata
 COPY docker-php-entrypoint /usr/local/bin/
 
 # Add the main user with specific UID
+# DO NOT CHANGE USER NAME
 ARG USER=www-data
-ARG UID=2000
+ARG UID=1000
 RUN sed -i -e "s/^\($USER:[^:]\):[0-9]*:[0-9]*:/\1:$UID:$UID:/" /etc/passwd && \
 	sed -i -e "s/^\($USER:[^:]\):[0-9]*:/\1:$UID:/" /etc/group
